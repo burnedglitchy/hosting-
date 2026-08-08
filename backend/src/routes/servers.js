@@ -1,0 +1,6 @@
+const express=require('express'); const {z}=require('zod'); const prisma=require('../config/prisma'); const validate=require('../middleware/validate'); const {requireAuth}=require('../middleware/auth'); const ptero=require('../services/PterodactylService'); const router=express.Router(); router.use(requireAuth);
+const own=async(id,ownerId)=>prisma.server.findFirst({where:{id,ownerId},include:{plan:true}});
+router.get('/',async(req,res)=>res.json({servers:await prisma.server.findMany({where:{ownerId:req.user.id},include:{plan:true},orderBy:{createdAt:'desc'}})}));
+router.get('/:id',async(req,res)=>{const s=await own(req.params.id,req.user.id); if(!s)return res.status(404).json({message:'Server not found'}); res.json({server:s});});
+router.get('/:id/stats',async(req,res)=>{const s=await own(req.params.id,req.user.id); if(!s)return res.status(404).json({message:'Server not found'}); res.json({stats:ptero.getMockStats()});});
+router.post('/:id/power',validate(z.object({body:z.object({action:z.enum(['start','stop','restart'])}),params:z.object({id:z.string()})})),async(req,res)=>{const s=await own(req.params.id,req.user.id); if(!s)return res.status(404).json({message:'Server not found'}); res.json({ok:true,action:req.validated.body.action});}); module.exports=router;
