@@ -1,0 +1,12 @@
+let mockUserId = 1000, mockServerId = 5000;
+class PterodactylService {
+  constructor(){ this.mode=(process.env.PTERODACTYL_MODE||'MOCK').toUpperCase(); this.base=process.env.PTERODACTYL_PANEL_URL; this.key=process.env.PTERODACTYL_API_KEY; }
+  async request(path, options={}) { if (this.mode !== 'LIVE') throw new Error('Live API unavailable in mock mode'); const res = await fetch(`${this.base}/api/application${path}`, { ...options, headers:{ Authorization:`Bearer ${this.key}`, Accept:'Application/vnd.pterodactyl.v1+json','Content-Type':'application/json', ...(options.headers||{}) }}); if (!res.ok) throw new Error(`Pterodactyl API failed: ${res.status}`); return res.json(); }
+  async createUser(user){ if(this.mode!=='LIVE') return { id:String(++mockUserId) }; const data=await this.request('/users',{method:'POST',body:JSON.stringify({email:user.email,username:user.email.split('@')[0].replace(/[^a-z0-9_.-]/gi,'').slice(0,32),first_name:user.name||'MPanel',last_name:'User'})}); return { id:String(data.attributes.id) }; }
+  async createServer({ user, plan, name, location }){ if(this.mode!=='LIVE') return { id:String(++mockServerId), uuid:`mock-${Date.now()}-${mockServerId}` }; const data=await this.request('/servers',{method:'POST',body:JSON.stringify({name,user:Number(user.pterodactylUserId),egg:Number(process.env.PTERODACTYL_EGG_ID),docker_image:process.env.PTERODACTYL_DOCKER_IMAGE||'ghcr.io/pterodactyl/yolks:java_21',startup:process.env.PTERODACTYL_STARTUP||'java -Xms128M -Xmx{{SERVER_MEMORY}}M -jar server.jar',limits:{memory:plan.ramMb,swap:0,disk:plan.diskMb,io:500,cpu:plan.cpuPercent},feature_limits:{databases:plan.maxDatabases,backups:plan.maxBackups},allocation:{default:Number(location)}})}); return { id:String(data.attributes.id), uuid:data.attributes.uuid }; }
+  async suspendServer(id){ if(this.mode!=='LIVE') return true; await this.request(`/servers/${id}/suspend`,{method:'POST'}); return true; }
+  async unsuspendServer(id){ if(this.mode!=='LIVE') return true; await this.request(`/servers/${id}/unsuspend`,{method:'POST'}); return true; }
+  async deleteServer(id){ if(this.mode!=='LIVE') return true; await this.request(`/servers/${id}`,{method:'DELETE'}); return true; }
+  getMockStats(){ return { cpu: Math.floor(10+Math.random()*35), ramMb: Math.floor(1024+Math.random()*4096), diskMb: Math.floor(8000+Math.random()*4000), players: Math.floor(Math.random()*24), uptime:'14d 6h 22m' }; }
+}
+module.exports = new PterodactylService();

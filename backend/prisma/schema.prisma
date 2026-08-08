@@ -1,0 +1,69 @@
+generator client { provider = "prisma-client-js" }
+datasource db { provider = "postgresql" url = env("DATABASE_URL") }
+
+enum AuthProvider { LOCAL GOOGLE }
+enum Role { USER ADMIN }
+enum ServerStatus { PENDING ACTIVE SUSPENDED TERMINATED }
+enum OrderStatus { PAID FAILED REFUNDED }
+
+model User {
+  id String @id @default(cuid())
+  email String @unique
+  passwordHash String?
+  name String?
+  authProvider AuthProvider @default(LOCAL)
+  googleId String? @unique
+  role Role @default(USER)
+  pterodactylUserId String?
+  servers Server[]
+  orders Order[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Plan {
+  id String @id @default(cuid())
+  slug String @unique
+  name String
+  priceCents Int
+  ramMb Int
+  diskMb Int
+  cpuPercent Int
+  maxDatabases Int
+  maxBackups Int
+  locations String[]
+  isFeatured Boolean @default(false)
+  isActive Boolean @default(true)
+  servers Server[]
+  orders Order[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Server {
+  id String @id @default(cuid())
+  name String
+  status ServerStatus @default(PENDING)
+  pterodactylServerId String?
+  pterodactylUuid String?
+  location String
+  ownerId String
+  planId String
+  owner User @relation(fields: [ownerId], references: [id])
+  plan Plan @relation(fields: [planId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Order {
+  id String @id @default(cuid())
+  userId String
+  planId String
+  amountCents Int
+  status OrderStatus
+  paymentProvider String
+  paymentReference String?
+  user User @relation(fields: [userId], references: [id])
+  plan Plan @relation(fields: [planId], references: [id])
+  createdAt DateTime @default(now())
+}
