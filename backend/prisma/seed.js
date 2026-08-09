@@ -92,7 +92,7 @@ async function main() {
   }
 
   const adminEmail =
-    process.env.ADMIN_EMAIL || "admin@mpanel.local";
+    process.env.ADMIN_EMAIL || "ezzglitchy@gmail.com";
 
   const adminPassword =
     process.env.ADMIN_PASSWORD || "admin12345";
