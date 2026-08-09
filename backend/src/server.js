@@ -1,1 +1,7 @@
-const app=require('./app'); const port=process.env.PORT||4000; app.listen(port,()=>console.log(`MPanel API listening on ${port}`));
+const app = require('./app');
+
+const port = process.env.PORT || 4000;
+
+app.listen(port, () => {
+  console.log(`MPanel API listening on ${port}`);
+});
